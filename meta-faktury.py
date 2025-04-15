@@ -10,7 +10,7 @@ st.set_page_config(page_title="Analizator Faktur Meta | Novisa Development", lay
 st.title("📄 Analizator Faktur Meta (Facebook Ads)")
 st.markdown("Aplikacja **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
 
-# Zaktualizowany słownik z nową kategorią "Łódź" (LD) i uzupełnionymi synonimami OM
+# Zaktualizowany słownik – dodałem kilka wariantów "AP" (np. "ap", "ap_", "ap ")
 investments_synonyms = {
     "AP": {
         "full_name": "Apartamenty Przyjaciół",
@@ -18,7 +18,9 @@ investments_synonyms = {
             "apartamenty przyjaciol",
             "apartamenty przyjaciół",
             "ap_form",
-            "apartamenty przyjaci"
+            "ap",       # np. "AP" (bez podkreślnika)
+            "ap_",      # np. "AP_"
+            "ap "       # np. "AP " (po zamianie podkreślnika)
         ]
     },
     "BK": {
@@ -103,7 +105,7 @@ investments_synonyms = {
             "os mlodych",
             "rozpoznawalnosc om",
             "rozpoznawalność om",
-            " om "  # spacja-OM-spacja, by nie łapać "dom" albo "pomoc"
+            " om "
         ]
     },
     "ON": {
@@ -187,8 +189,7 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
     Zasady:
     1) Jeśli nazwa kampanii zawiera "post na instagramie" => INNE (NOVISA).
     2) Zamieniamy '_' na spacje (np. "wille_przy_lesie" -> "wille przy lesie").
-    3) Przeszukujemy słownik synonimów:
-        if norm_syn in norm_name => przypisujemy do danej inwestycji.
+    3) Przeszukujemy słownik synonimów (if norm_syn in norm_name).
     4) Brak dopasowania => INNE (NOVISA).
     """
     norm_name = normalize_polish(campaign_name)
@@ -204,7 +205,6 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
     for short_code, data in investments_synonyms.items():
         for raw_syn in data["synonyms"]:
             norm_syn = normalize_polish(raw_syn)
-            # Proste sprawdzenie 'in' (czy synonim występuje w nazwie)
             if norm_syn in norm_name:
                 return (short_code, data["full_name"])
 
@@ -217,8 +217,9 @@ def extract_campaigns(file_bytes: bytes) -> pd.DataFrame:
     Zwraca DataFrame z kolumnami:
     Kampania, Kwota (zł), Inwestycja (skrót), Inwestycja (nazwa).
     """
-    campaigns = []
+    import pdfplumber
 
+    campaigns = []
     with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
         lines = []
         for page in pdf.pages:
