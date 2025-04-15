@@ -10,7 +10,7 @@ st.set_page_config(page_title="Analizator Faktur Meta | Novisa Development", lay
 st.title("📄 Analizator Faktur Meta (Facebook Ads)")
 st.markdown("Aplikacja **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
 
-# Zaktualizowany słownik z poszerzonymi synonimami + zmiana MAM2 -> MM2
+# Zaktualizowany słownik z nową kategorią "Łódź" (LD) i uzupełnionymi synonimami OM
 investments_synonyms = {
     "AP": {
         "full_name": "Apartamenty Przyjaciół",
@@ -100,14 +100,16 @@ investments_synonyms = {
         "synonyms": [
             "osiedle mlodych",
             "osiedle młodych",
-            "os mlodych"
+            "os mlodych",
+            "rozpoznawalnosc om",
+            "rozpoznawalność om",
+            " om "  # spacja-OM-spacja, by nie łapać "dom" albo "pomoc"
         ]
     },
     "ON": {
         "full_name": "Osiedle Natura",
         "synonyms": [
             "osiedle natura"
-            # Usuwamy krótkie 'on' by uniknąć kolizji z "zielONe"
         ]
     },
     "OS": {
@@ -115,8 +117,8 @@ investments_synonyms = {
         "synonyms": [
             "osiedle sloneczne",
             "osiedle słoneczne",
-            "rozpoznawalnosc os",   # dopisujemy, by "rozpoznawalnosc os" była kojarzona
-            "rozpoznawalność os"   # lub z polskim znakiem
+            "rozpoznawalnosc os",
+            "rozpoznawalność os"
         ]
     },
     "PT": {
@@ -155,6 +157,13 @@ investments_synonyms = {
             "zm_"
         ]
     },
+    "LD": {
+        "full_name": "Łódź",
+        "synonyms": [
+            "lodz",
+            "łódź"
+        ]
+    }
 }
 
 def normalize_polish(text: str) -> str:
@@ -177,9 +186,10 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
 
     Zasady:
     1) Jeśli nazwa kampanii zawiera "post na instagramie" => INNE (NOVISA).
-    2) Zamieniamy '_' na spacje, by np. "boska ksawerowska_listopad" => "boska ksawerowska listopad".
-    3) Szukamy synonimów w prosty sposób: if norm_syn in norm_name.
-    4) Jeśli nic nie pasuje => INNE (NOVISA).
+    2) Zamieniamy '_' na spacje (np. "wille_przy_lesie" -> "wille przy lesie").
+    3) Przeszukujemy słownik synonimów:
+        if norm_syn in norm_name => przypisujemy do danej inwestycji.
+    4) Brak dopasowania => INNE (NOVISA).
     """
     norm_name = normalize_polish(campaign_name)
 
@@ -194,16 +204,18 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
     for short_code, data in investments_synonyms.items():
         for raw_syn in data["synonyms"]:
             norm_syn = normalize_polish(raw_syn)
+            # Proste sprawdzenie 'in' (czy synonim występuje w nazwie)
             if norm_syn in norm_name:
                 return (short_code, data["full_name"])
 
-    # 4) Jeśli brak dopasowania
+    # 4) Brak dopasowania
     return ("INNE (NOVISA)", "INNE (NOVISA)")
 
 def extract_campaigns(file_bytes: bytes) -> pd.DataFrame:
     """
     Otwiera plik PDF (bytes) i na podstawie wzorców w treści wyszukuje informacje o kampaniach.
-    Zwraca DataFrame z kolumnami: Kampania, Kwota (zł), Inwestycja (skrót), Inwestycja (nazwa).
+    Zwraca DataFrame z kolumnami:
+    Kampania, Kwota (zł), Inwestycja (skrót), Inwestycja (nazwa).
     """
     campaigns = []
 
@@ -260,6 +272,7 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     all_dfs = []
+
     with st.spinner("Przetwarzanie faktur..."):
         for single_file in uploaded_files:
             file_bytes = single_file.read()
