@@ -1,4 +1,4 @@
-streamlit==1.20.0
-pdfplumber==0.9.0
-pandas==2.0.0
-openpyxl==3.0.10
+streamlit==1.44.1
+pdfplumber==0.11.6
+pandas==2.2.3
+openpyxl==3.1.5
