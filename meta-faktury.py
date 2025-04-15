@@ -6,20 +6,19 @@ import re
 
 st.set_page_config(page_title="Analizator Faktur Meta | Novisa Development", layout="centered")
 
-# Dodajemy informację o firmie w widocznym miejscu
+# Informacja o firmie
 st.title("📄 Analizator Faktur Meta (Facebook Ads)")
 st.markdown("Aplikacja **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
 
-# Uaktualniony słownik z poszerzonymi synonimami
+# Zaktualizowany słownik z poszerzonymi synonimami + zmiana MAM2 -> MM2
 investments_synonyms = {
     "AP": {
         "full_name": "Apartamenty Przyjaciół",
         "synonyms": [
             "apartamenty przyjaciol",
             "apartamenty przyjaciół",
-            "ap ",
             "ap_form",
-            "ap"  # uwzględniamy też bez spacji
+            "apartamenty przyjaci"
         ]
     },
     "BK": {
@@ -29,7 +28,7 @@ investments_synonyms = {
             "boska ksawerowska_form"
         ]
     },
-    "MAM2": {
+    "MM2": {
         "full_name": "Manufaktura Marki 2",
         "synonyms": [
             "manufaktura marki 2",
@@ -99,7 +98,6 @@ investments_synonyms = {
     "OM": {
         "full_name": "Osiedle Młodych",
         "synonyms": [
-            "om",
             "osiedle mlodych",
             "osiedle młodych",
             "os mlodych"
@@ -108,8 +106,8 @@ investments_synonyms = {
     "ON": {
         "full_name": "Osiedle Natura",
         "synonyms": [
-            "on",
             "osiedle natura"
+            # Usuwamy krótkie 'on' by uniknąć kolizji z "zielONe"
         ]
     },
     "OS": {
@@ -117,14 +115,13 @@ investments_synonyms = {
         "synonyms": [
             "osiedle sloneczne",
             "osiedle słoneczne",
-            "os ",
-            "os"  # dopisane, by złapać "rozpoznawalnosc os"
+            "rozpoznawalnosc os",   # dopisujemy, by "rozpoznawalnosc os" była kojarzona
+            "rozpoznawalność os"   # lub z polskim znakiem
         ]
     },
     "PT": {
         "full_name": "Pod Topolami",
         "synonyms": [
-            "pt",
             "pod topolami"
         ]
     },
@@ -132,21 +129,18 @@ investments_synonyms = {
         "full_name": "Slow Wilanów",
         "synonyms": [
             "slow wilanow",
-            "slow wilanów",
-            "sw"
+            "slow wilanów"
         ]
     },
     "WPL": {
         "full_name": "Wille przy Lesie",
         "synonyms": [
-            "wpl",
             "wille przy lesie"
         ]
     },
     "ZO": {
         "full_name": "Zielone Ogrody",
         "synonyms": [
-            "zo",
             "zielone ogrody",
             "zielone ogrody_form",
             "zielone ogrody_form kampania"
@@ -155,20 +149,17 @@ investments_synonyms = {
     "ZM": {
         "full_name": "Zielono Mi",
         "synonyms": [
-            "zm",
-            "zm_form",
             "zielono mi",
+            "zm_form",
             "zm form",
             "zm_"
         ]
     },
 }
 
-import pdfplumber
-
 def normalize_polish(text: str) -> str:
     """
-    Usuwa polskie znaki i konwertuje na lower-case.
+    Usuwa polskie znaki i konwertuje do lower-case.
     """
     replace_map = {
         "ą": "a", "ć": "c", "ę": "e", "ł": "l",
@@ -182,29 +173,41 @@ def normalize_polish(text: str) -> str:
 
 def find_investment(campaign_name: str) -> tuple[str, str]:
     """
-    Próbuje dopasować nazwę kampanii do jednej z inwestycji na podstawie słowników.
-    Jeśli nie znajdzie dopasowania, zwraca ('INNE (NOVISA)', 'INNE (NOVISA)').
+    Logika decydująca o tym, do której inwestycji przypisać nazwę kampanii.
+
+    Zasady:
+    1) Jeśli nazwa kampanii zawiera "post na instagramie" => INNE (NOVISA).
+    2) Zamieniamy '_' na spacje, by np. "boska ksawerowska_listopad" => "boska ksawerowska listopad".
+    3) Szukamy synonimów w prosty sposób: if norm_syn in norm_name.
+    4) Jeśli nic nie pasuje => INNE (NOVISA).
     """
     norm_name = normalize_polish(campaign_name)
 
+    # 1) "Post na instagramie" zawsze do INNE
+    if "post na instagramie" in norm_name:
+        return ("INNE (NOVISA)", "INNE (NOVISA)")
+
+    # 2) Zamiana podkreśleń na spacje
+    norm_name = norm_name.replace("_", " ")
+
+    # 3) Przeszukiwanie słownika
     for short_code, data in investments_synonyms.items():
-        full_name = data["full_name"]
         for raw_syn in data["synonyms"]:
             norm_syn = normalize_polish(raw_syn)
-            # Jeśli synonim występuje w znormalizowanej nazwie
             if norm_syn in norm_name:
-                return (short_code, full_name)
+                return (short_code, data["full_name"])
 
+    # 4) Jeśli brak dopasowania
     return ("INNE (NOVISA)", "INNE (NOVISA)")
 
-def extract_campaigns(file) -> pd.DataFrame:
+def extract_campaigns(file_bytes: bytes) -> pd.DataFrame:
     """
-    Otwiera plik PDF i na podstawie wzorców w treści wyszukuje informacje o kampaniach.
-    Zwraca DataFrame z kolumnami:
-    Kampania, Kwota (zł), Inwestycja (skrót), Inwestycja (nazwa).
+    Otwiera plik PDF (bytes) i na podstawie wzorców w treści wyszukuje informacje o kampaniach.
+    Zwraca DataFrame z kolumnami: Kampania, Kwota (zł), Inwestycja (skrót), Inwestycja (nazwa).
     """
     campaigns = []
-    with pdfplumber.open(file) as pdf:
+
+    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
         lines = []
         for page in pdf.pages:
             page_text = page.extract_text()
@@ -216,12 +219,12 @@ def extract_campaigns(file) -> pd.DataFrame:
 
     # Regex do wychwycenia linii typu: "Od 01.12.2024 do 31.12.2024"
     date_pattern = re.compile(r"^Od\s.*\sdo\s.*$")
-    # Regex kwoty: "1 234,56 zł" lub "123,45 zł"
+    # Regex kwoty: np. "1 234,56 zł" lub "123,45 zł"
     amount_pattern = re.compile(r"([\d\s]+,\d{2})\s*zł")
 
     for i in range(len(lines)):
         if date_pattern.match(lines[i]):
-            # Zakładamy, że kampania jest 2 linie wyżej, kwota 1 linię wyżej
+            # Zakładamy, że kampania jest 2 linie wyżej, a kwota 1 linię wyżej
             if i < 2:
                 continue
             campaign_line = lines[i - 2]
@@ -257,100 +260,94 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files:
     all_dfs = []
-
     with st.spinner("Przetwarzanie faktur..."):
         for single_file in uploaded_files:
-            df_single = extract_campaigns(single_file)
+            file_bytes = single_file.read()
+            df_single = extract_campaigns(file_bytes)
             if not df_single.empty:
                 df_single["Plik"] = single_file.name
                 all_dfs.append(df_single)
             else:
                 st.warning(f"Nie udało się znaleźć danych kampanii w pliku: {single_file.name}")
 
-        if all_dfs:
-            df_combined = pd.concat(all_dfs, ignore_index=True)
+    if all_dfs:
+        df_combined = pd.concat(all_dfs, ignore_index=True)
 
-            # Zakładki: Szczegółowy, Raport (Inwestycje -> Kampanie), Raport uproszczony
-            tab_szczegoly, tab_raport, tab_raport_uproszczony = st.tabs(
-                ["Szczegółowy", "Raport", "Raport uproszczony"]
+        # Zakładki: Szczegółowy, Raport, Raport uproszczony
+        tab_szczegoly, tab_raport, tab_raport_uproszczony = st.tabs(
+            ["Szczegółowy", "Raport", "Raport uproszczony"]
+        )
+
+        with tab_szczegoly:
+            st.subheader("Widok szczegółowy")
+            st.dataframe(df_combined)
+            total_all = df_combined["Kwota (zł)"].sum()
+            st.write(f"**Łączna kwota (wszystkie pliki)**: {total_all:.2f} zł")
+
+            # Eksport do Excela - szczegóły
+            to_excel = io.BytesIO()
+            df_combined.to_excel(to_excel, index=False)
+            to_excel.seek(0)
+            st.download_button(
+                label="📥 Pobierz szczegółowy arkusz (Excel)",
+                data=to_excel,
+                file_name="kampanie_szczegoly.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-            with tab_szczegoly:
-                st.subheader("Widok szczegółowy")
-                st.dataframe(df_combined)
-                total_all = df_combined["Kwota (zł)"].sum()
-                st.write(f"**Łączna kwota (wszystkie pliki)**: {total_all:.2f} zł")
+        with tab_raport:
+            st.subheader("Raport: Inwestycje -> Kampanie")
 
-                # Eksport do Excela (szczegóły)
-                to_excel = io.BytesIO()
-                df_combined.to_excel(to_excel, index=False)
-                to_excel.seek(0)
-                st.download_button(
-                    label="📥 Pobierz szczegółowy arkusz (Excel)",
-                    data=to_excel,
-                    file_name="kampanie_szczegoly.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            df_grouped = df_combined.groupby(["Inwestycja (skrót)", "Inwestycja (nazwa)"])
+            total_sum = 0.0
 
-            with tab_raport:
-                st.subheader("Raport: Inwestycje -> Kampanie")
+            for (inv_code, inv_name), group_df in df_grouped:
+                st.markdown(f"### {inv_code} - {inv_name}")
+                sub = group_df[["Kampania", "Kwota (zł)"]].reset_index(drop=True)
+                group_sum = sub["Kwota (zł)"].sum()
+                total_sum += group_sum
+                st.dataframe(sub)
+                st.write(f"**Razem: {group_sum:.2f} zł**")
+                st.write("---")
 
-                df_grouped = df_combined.groupby(["Inwestycja (skrót)", "Inwestycja (nazwa)"])
-                total_sum = 0.0
+            st.write(f"### Łączna kwota (wszystkie inwestycje): {total_sum:.2f} zł")
 
-                for (inv_code, inv_name), group_df in df_grouped:
-                    st.markdown(f"### {inv_code} - {inv_name}")
-                    sub = group_df[["Kampania", "Kwota (zł)"]].reset_index(drop=True)
-                    group_sum = sub["Kwota (zł)"].sum()
-                    total_sum += group_sum
-                    st.dataframe(sub)
-                    st.write(f"**Razem: {group_sum:.2f} zł**")
-                    st.write("---")
+            to_excel_raport = io.BytesIO()
+            df_combined.to_excel(to_excel_raport, index=False)
+            to_excel_raport.seek(0)
+            st.download_button(
+                label="📥 Pobierz raport inwestycje (Excel)",
+                data=to_excel_raport,
+                file_name="raport_inwestycje_kampanie.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
-                st.write(f"### Łączna kwota (wszystkie inwestycje): {total_sum:.2f} zł")
+        with tab_raport_uproszczony:
+            st.subheader("Raport uproszczony: Kwota łącznie dla każdej inwestycji")
 
-                # Eksport do Excela (ten sam df_combined, bo raport i tak się z niego generuje)
-                to_excel_raport = io.BytesIO()
-                df_combined.to_excel(to_excel_raport, index=False)
-                to_excel_raport.seek(0)
-                st.download_button(
-                    label="📥 Pobierz raport inwestycje (Excel)",
-                    data=to_excel_raport,
-                    file_name="raport_inwestycje_kampanie.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            df_simpl = (
+                df_combined
+                .groupby(["Inwestycja (skrót)", "Inwestycja (nazwa)"], as_index=False)["Kwota (zł)"]
+                .sum()
+            )
+            st.dataframe(df_simpl)
 
-            with tab_raport_uproszczony:
-                st.subheader("Raport uproszczony: Kwota łącznie dla każdej inwestycji")
+            total_simple = df_simpl["Kwota (zł)"].sum()
+            st.write(f"**Łącznie (wszystkie inwestycje)**: {total_simple:.2f} zł")
 
-                # Grupujemy tylko po inwestycji i sumujemy kwoty, bez rozpisywania kampanii
-                df_simpl = (
-                    df_combined
-                    .groupby(["Inwestycja (skrót)", "Inwestycja (nazwa)"], as_index=False)["Kwota (zł)"]
-                    .sum()
-                )
+            to_excel_simpl = io.BytesIO()
+            df_simpl.to_excel(to_excel_simpl, index=False)
+            to_excel_simpl.seek(0)
+            st.download_button(
+                label="📥 Pobierz raport uproszczony (Excel)",
+                data=to_excel_simpl,
+                file_name="raport_uproszczony_inwestycje.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
 
-                # Wyświetlamy
-                st.dataframe(df_simpl)
+    else:
+        st.warning("Żaden z wgranych plików nie zawierał danych kampanii.")
 
-                # Suma globalna
-                total_simple = df_simpl["Kwota (zł)"].sum()
-                st.write(f"**Łącznie (wszystkie inwestycje)**: {total_simple:.2f} zł")
-
-                # Eksport do Excela (raport uproszczony)
-                to_excel_simpl = io.BytesIO()
-                df_simpl.to_excel(to_excel_simpl, index=False)
-                to_excel_simpl.seek(0)
-                st.download_button(
-                    label="📥 Pobierz raport uproszczony (Excel)",
-                    data=to_excel_simpl,
-                    file_name="raport_uproszczony_inwestycje.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-
-        else:
-            st.warning("Żaden z wgranych plików nie zawierał danych kampanii.")
-
-# Ewentualne podsumowanie lub stopka:
+# Stopka
 st.markdown("---")
 st.markdown("**Novisa Development**")
