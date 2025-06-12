@@ -34,7 +34,8 @@ investments_synonyms = {
         "full_name": "Boska Ksawerowska 2",
         "synonyms": [
             "boska ksawerowska 2",
-            "boska ksawerowska 2_form"
+            "boska ksawerowska 2_form",
+            "boska ksawerowska 2 kampania"  # Dodano nowy synonim
         ]
     },
     "MM2": {
@@ -208,12 +209,18 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
     # 2) Zamiana podkreśleń na spacje
     norm_name = norm_name.replace("_", " ")
 
-    # 3) Przeszukiwanie słownika
+    # 3) Przeszukiwanie słownika - najpierw szukamy dłuższych dopasowań
+    matches = []
     for short_code, data in investments_synonyms.items():
         for raw_syn in data["synonyms"]:
             norm_syn = normalize_polish(raw_syn)
             if norm_syn in norm_name:
-                return (short_code, data["full_name"])
+                matches.append((len(norm_syn), short_code, data["full_name"]))
+    
+    # Sortujemy po długości dopasowania (malejąco) i bierzemy najdłuższe
+    if matches:
+        matches.sort(reverse=True)
+        return (matches[0][1], matches[0][2])
 
     # 4) Brak dopasowania
     return ("INNE (NOVISA)", "INNE (NOVISA)")
@@ -371,4 +378,4 @@ if uploaded_files:
 
 # Stopka
 st.markdown("---")
-st.markdown("**Novisa Development**")
+st.markdown("**Novisa Development | v2.0**")
