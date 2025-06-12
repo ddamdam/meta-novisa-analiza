@@ -30,6 +30,13 @@ investments_synonyms = {
             "boska ksawerowska_form"
         ]
     },
+    "BK2": {
+        "full_name": "Boska Ksawerowska 2",
+        "synonyms": [
+            "boska ksawerowska 2",
+            "boska ksawerowska 2_form"
+        ]
+    },
     "MM2": {
         "full_name": "Manufaktura Marki 2",
         "synonyms": [
