@@ -10,7 +10,7 @@ st.set_page_config(page_title="Analizator Faktur Meta | Novisa Development", lay
 st.title("📄 Analizator Faktur Meta (Facebook Ads)")
 st.markdown("Aplikacja **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
 
-# Zaktualizowany słownik – dodałem kilka wariantów "AP" (np. "ap", "ap_", "ap ")
+# Zaktualizowany słownik – dodano AW (Arkady Walendów), DnW (Domy na Witosa), ZM2 (Zielono Mi 2)
 investments_synonyms = {
     "AP": {
         "full_name": "Apartamenty Przyjaciół",
@@ -21,6 +21,25 @@ investments_synonyms = {
             "ap",       # np. "AP" (bez podkreślnika)
             "ap_",      # np. "AP_"
             "ap "       # np. "AP " (po zamianie podkreślnika)
+        ]
+    },
+    "AW": {
+        "full_name": "Arkady Walendów",
+        "synonyms": [
+            "arkady walendow",
+            "arkady walendów",
+            "aw",
+            "aw_",
+            "aw "
+        ]
+    },
+    "DnW": {
+        "full_name": "Domy na Witosa",
+        "synonyms": [
+            "domy na witosa",
+            "dnw",
+            "dnw_",
+            "dnw "
         ]
     },
     "BK": {
@@ -158,9 +177,20 @@ investments_synonyms = {
             "zielone ogrody_form kampania"
         ]
     },
+    "ZM2": {
+        "full_name": "Zielono Mi 2",
+        "synonyms": [
+            "zielono mi 2",
+            "zm2",
+            "zm2_",
+            "zm2 form",
+            "zm2 kampania"
+        ]
+    },
     "ZM": {
         "full_name": "Zielono Mi",
         "synonyms": [
+            # Uwaga: nie używaj zbyt ogólnych synonimów, żeby nie łapało "zielono mi 2" jako "zielono mi"
             "zielono mi",
             "zm_form",
             "zm form",
