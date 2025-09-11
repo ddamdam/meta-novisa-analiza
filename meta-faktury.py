@@ -408,4 +408,4 @@ if uploaded_files:
 
 # Stopka
 st.markdown("---")
-st.markdown("**Novisa Development | v2.0**")
+st.markdown("**Novisa Development | v3.0**")
