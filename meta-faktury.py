@@ -203,6 +203,36 @@ investments_synonyms = {
             "lodz",
             "łódź"
         ]
+    },
+    "OST": {
+        "full_name": "Osiedle Stokrotki",
+        "synonyms": [
+            "osiedle stokrotki",
+            "ost",
+            "ost_",
+            "ost "
+        ]
+    },
+    "DO": {
+        "full_name": "Dzień Otwarty",
+        "synonyms": [
+            "dzien otwarty",
+            "dzień otwarty",
+            "dni otwarte",
+            "dni_otwarte",
+            "dzien_otwarty",
+            "dzień_otwarty"
+            
+        ]
+    },
+    "WS": {
+        "full_name": "Wille Stolema",
+        "synonyms": [
+            "wille stolema",
+            "ws",
+            "ws_",
+            "ws "
+        ]
     }
 }
 
