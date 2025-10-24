@@ -208,6 +208,7 @@ investments_synonyms = {
         "full_name": "Osiedle Stokrotki",
         "synonyms": [
             "osiedle stokrotki",
+            "osiedle_stokrotki",
             "ost",
             "ost_",
             "ost "
