@@ -226,6 +226,18 @@ investments_synonyms = {
             
         ]
     },
+    "AhP": {
+        "full_name": "Ahoj Pogórze",
+        "synonyms": [
+            "ahp",
+            "ahp_",
+            "ahp ",
+            "ahoj pogorze",
+            "ahoj pogórze",
+            "ahojpogorze",
+            "ahoj_pogorze"
+        ]
+    },
     "WS": {
         "full_name": "Wille Stolema",
         "synonyms": [
