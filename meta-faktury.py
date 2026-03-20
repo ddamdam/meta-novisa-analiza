@@ -7,8 +7,8 @@ import re
 st.set_page_config(page_title="Analizator Faktur Meta | Novisa Development", layout="centered")
 
 # Informacja o firmie
-st.title("📄 Analizator Faktur Meta (Facebook Ads)")
-st.markdown("Aplikacja **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
+st.title("📄 Analizator Faktur Meta (Facebook Ads!)")
+st.markdown("Aplikacja/ **Novisa Development** do analizy faktur i kampanii reklamowych Facebook Ads.")
 
 # Zaktualizowany słownik – dodano AW (Arkady Walendów), DnW (Domy na Witosa), ZM2 (Zielono Mi 2)
 investments_synonyms = {
