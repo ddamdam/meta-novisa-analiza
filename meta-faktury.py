@@ -246,6 +246,56 @@ investments_synonyms = {
             "ws_",
             "ws "
         ]
+    },
+    "OPD": {
+        "full_name": "Osiedle Pod Dębem",
+        "synonyms": [
+            "osiedle pod debem",
+            "osiedle pod dębem",
+            "pod debem",
+            "pod dębem",
+            "opd",
+            "opd_",
+            "opd "
+        ]
+    },
+    "BP": {
+        "full_name": "Boska Pabianicka",
+        "synonyms": [
+            "boska pabianicka",
+            "boska pabianicka_form",
+            "bp",
+            "bp_",
+            "bp "
+        ]
+    },
+    "MiM": {
+        "full_name": "Miód Malina",
+        "synonyms": [
+            "miod malina",
+            "miód malina",
+            "miod_malina",
+            "mim",
+            "mim_",
+            "mim "
+        ]
+    },
+    "OF": {
+        "full_name": "Osiedle Fikus",
+        "synonyms": [
+            "osiedle fikus",
+            "fikus"
+        ]
+    },
+    "TM": {
+        "full_name": "Trójmiasto (koszty ogólne)",
+        "synonyms": [
+            "25lecie",
+            "25 lecie",
+            "25-lecie",
+            "trojmiasto",
+            "trójmiasto"
+        ]
     }
 }
 
@@ -451,4 +501,4 @@ if uploaded_files:
 
 # Stopka
 st.markdown("---")
-st.markdown("**Novisa Development | v3.0**")
+st.markdown("**Novisa Development | v4.0** — aktualizacja 14.09.2026")
