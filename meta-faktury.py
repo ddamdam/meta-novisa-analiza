@@ -286,16 +286,6 @@ investments_synonyms = {
             "osiedle fikus",
             "fikus"
         ]
-    },
-    "TM": {
-        "full_name": "Trójmiasto (koszty ogólne)",
-        "synonyms": [
-            "25lecie",
-            "25 lecie",
-            "25-lecie",
-            "trojmiasto",
-            "trójmiasto"
-        ]
     }
 }
 
@@ -327,6 +317,10 @@ def find_investment(campaign_name: str) -> tuple[str, str]:
 
     # 1) "Post na instagramie" zawsze do INNE
     if "post na instagramie" in norm_name:
+        return ("INNE (NOVISA)", "INNE (NOVISA)")
+
+    # 1b) Kampanie 25-lecia (np. "25lecie – Trójmiasto", "25lecie - Łódź") → INNE
+    if "25lecie" in norm_name.replace(" ", "").replace("-", "").replace("_", ""):
         return ("INNE (NOVISA)", "INNE (NOVISA)")
 
     # 2) Zamiana podkreśleń na spacje
@@ -501,4 +495,4 @@ if uploaded_files:
 
 # Stopka
 st.markdown("---")
-st.markdown("**Novisa Development | v4.0** — aktualizacja 14.09.2026")
+st.markdown("**Novisa Development | v4.0** — aktualizacja 16.09.2026")
