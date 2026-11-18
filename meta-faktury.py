@@ -361,40 +361,48 @@ def extract_campaigns(file_bytes: bytes) -> pd.DataFrame:
                     if ln:
                         lines.append(ln)
 
-    # Regex do wychwycenia linii typu: "Od 01.12.2024 do 31.12.2024"
-    date_pattern = re.compile(r"^Od\s.*\sdo\s.*$")
-    # Regex kwoty: np. "1 234,56 zł" lub "123,45 zł"
-    amount_pattern = re.compile(r"([\d\s]+,\d{2})\s*zł")
+    return extract_campaigns_from_lines(lines)
 
-    for i in range(len(lines)):
-        if date_pattern.match(lines[i]):
-            # Zakładamy, że kampania jest 2 linie wyżej, a kwota 1 linię wyżej
+
+def extract_campaigns_from_lines(lines: list[str]) -> pd.DataFrame:
+    """Odczytuje podsumowania kampanii z polskich i angielskich faktur Meta."""
+    campaigns = []
+    lines = [line.strip() for line in lines if line.strip()]
+    date_pattern = re.compile(r"^(?:Od\s+.+\s+do\s+.+|From\s+.+\s+to\s+.+)$", re.IGNORECASE)
+    # Waluta wskazuje format liczby: PL 1 234,56 zł; EN PLN1,234.56.
+    amount_pattern = re.compile(
+        r"(?:(?P<en_prefix>PLN\s*(?P<en>[0-9][0-9,\s]*\.\d{2}))|"
+        r"(?P<pl>[0-9][0-9\s]*,\d{2})\s*(?:zł|PLN))\s*$",
+        re.IGNORECASE,
+    )
+
+    for i, line in enumerate(lines):
+        if not date_pattern.match(line) or i == 0:
+            continue
+        # PDF może umieścić nazwę i kwotę w jednym lub dwóch wierszach.
+        previous = lines[i - 1]
+        match = amount_pattern.search(previous)
+        if not match:
+            continue
+        campaign_name = previous[:match.start()].strip()
+        if not campaign_name:
             if i < 2:
                 continue
-            campaign_line = lines[i - 2]
-            amount_line = lines[i - 1]
+            campaign_name = lines[i - 2]
+        if match.group("en") is not None:
+            number = re.sub(r"\s+", "", match.group("en")).replace(",", "")
+        else:
+            number = re.sub(r"\s+", "", match.group("pl")).replace(",", ".")
+        amount = float(number)
+        inv_code, inv_name = find_investment(campaign_name)
+        campaigns.append((campaign_name, amount, inv_code, inv_name))
 
-            match = amount_pattern.search(amount_line)
-            if match:
-                amt_str = match.group(1).replace(' ', '').replace(',', '.')
-                try:
-                    amount = float(amt_str)
-                except ValueError:
-                    amount = None
-
-                if amount is not None:
-                    inv_code, inv_name = find_investment(campaign_line)
-                    campaigns.append(
-                        (campaign_line, amount, inv_code, inv_name)
-                    )
-
-    df = pd.DataFrame(campaigns, columns=[
+    return pd.DataFrame(campaigns, columns=[
         "Kampania",
         "Kwota (zł)",
         "Inwestycja (skrót)",
-        "Inwestycja (nazwa)"
+        "Inwestycja (nazwa)",
     ])
-    return df
 
 uploaded_files = st.file_uploader(
     "Wrzuć jeden lub kilka plików PDF z fakturami",
