@@ -503,4 +503,5 @@ if uploaded_files:
 
 # Stopka
 st.markdown("---")
-st.markdown("**Novisa Development | v4.0** — aktualizacja 16.09.2026")
+st.markdown("**Novisa Development | v4.1** - aktualizacja 18.11.2026")
+st.caption("Dodano obsługę faktur w języku angielskim. Zachowano obsługę polskich faktur.")
